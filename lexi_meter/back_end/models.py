@@ -62,11 +62,32 @@ class QuizQuestion(SQLModel, table=True):
 
 class QuizOption(SQLModel, table=True):
     "Stores answer options for each qustion"
+    id: Optional[str] = Field(default_factory=get_defult_uuid, primary_key=True)
+    question_id: str = Field(foreign_key="question.id", nullable=False)
+    option_text: str = Field(nullable=False)
+
+    question: QuizQuestion = Relationship(back_populates="options")
+    answers: List["QuizAnswer"] = Relationship(
+        back_populates="option", sa_relationship_kwargs={"cascade": "all,delete-orphan"}
+    )
 
 
 class Participant(SQLModel, table=True):
     "Stores Participant information"
+    id: Optional[str] = Field(default_factory=get_defult_uuid, primary_key=True)
+    participant_name: str = Field(default=None, min_length=1, max_length=255)
+
+    answers: List["QuizAnswer"] = Relationship(
+        back_populates="participant",
+        sa_relationship_kwargs={"cascade": "all,delete-orphan"},
+    )
 
 
 class QuizAnswer(SQLModel, table=True):
     "Stores answers from participants"
+    id: Optional[str] = Field(default_factory=get_defult_uuid, primary_key=True)
+    participant_id: str = Field(foreign_key="participant.id", nullable=False)
+    option_id: str = Field(foreign_key="quizoption.id", nullable=False)
+
+    option: QuizOption = Relationship(back_populates="answers")
+    participant: Participant = Relationship(back_populates="answers")
