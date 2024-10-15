@@ -1,0 +1,11 @@
+question_nr,question,option_a,option_b,option_c,correct_option
+1,What is the capital of France?,Berlin,Madrid,Paris,option_c
+2,What is the largest planet in our solar system?,Earth,Jupiter,Mars,option_b
+3,Who wrote 'Romeo and Juliet'?,William Shakespeare,Charles Dickens,J.K. Rowling,option_a
+4,What is the chemical symbol for water?,H2O,O2,CO2,option_a
+5,What is the smallest prime number?,1,2,3,option_b
+6,What year did the Titanic sink?,1912,1920,1905,option_a
+7,Who painted the Mona Lisa?,Vincent van Gogh,Pablo Picasso,Leonardo da Vinci,option_c
+8,What is the main ingredient in guacamole?,Tomatoes,Avocados,Onions,option_b
+9,What is the tallest mountain in the world?,K2,Kangchenjunga,Mount Everest,option_c
+10,What is the freezing point of water in Celsius?,0°C,32°C,100°C,option_a

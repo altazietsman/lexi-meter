@@ -1,0 +1,1 @@
+python -m pytest --cov-report term-missing --cov=. --cov-fail-under=0 tests/
