@@ -1,7 +1,17 @@
 """The main script for the project"""
 
 import uvicorn
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, status
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, status
+from sqlmodel import Session
+
+from lexi_meter.back_end.models import (
+    Quiz,
+    QuizCreateBody,
+    QuizOption,
+    QuizQuestion,
+    create_db_and_tables,
+    engine,
+)
 
 app = FastAPI()
 
@@ -35,13 +45,39 @@ manager = QuizManager()
 @app.on_event("startup")
 def on_startup():
     """Creates database on start-up"""
-    pass
+    create_db_and_tables()
 
 
 @app.post("/create-quiz/", status_code=status.HTTP_201_CREATED)
-async def create_quiz():
-    """Creates a new quiz"""
-    pass
+async def create_quiz(data: QuizCreateBody):
+    """Creates a new quiz with multiple questions and options."""
+    if not data.questions:
+        raise HTTPException(
+            status_code=400, detail="A quiz must have at least one question."
+        )
+
+    with Session(engine) as session:
+        questions = [
+            QuizQuestion(
+                question_text=question.question_text,
+                options=[
+                    QuizOption(option_text=opt.option_text) for opt in question.options
+                ],
+            )
+            for question in data.questions
+        ]
+
+        quiz = Quiz(
+            title=data.title,
+            user_id=data.user_id,
+            questions=questions,
+        )
+
+        session.add(quiz)
+        session.commit()
+        session.refresh(quiz)
+
+        return {"quiz_id": quiz.id, "message": "Quiz created successfully"}
 
 
 @app.get("/get-available-quiz/", status_code=status.HTTP_200_OK)

@@ -32,7 +32,9 @@ def test_create_quiz(session):
         ],
     )
 
-    new_quiz = Quiz(title="Programming Survey", user_id="user_123", questions=[question])
+    new_quiz = Quiz(
+        title="Programming Survey", user_id="user_123", questions=[question]
+    )
 
     # Add the quiz to the session and commit
     session.add(new_quiz)
@@ -46,7 +48,9 @@ def test_create_quiz(session):
     assert len(quiz_from_db.questions) == 1
 
     question_from_db = quiz_from_db.questions[0]
-    assert question_from_db.question_text == "What is your favorite programming language?"
+    assert (
+        question_from_db.question_text == "What is your favorite programming language?"
+    )
     assert len(question_from_db.options) == 2
 
     option_texts = [option.option_text for option in question_from_db.options]
