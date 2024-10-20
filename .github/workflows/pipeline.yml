@@ -1,0 +1,50 @@
+# This is a basic workflow to help you get started with Actions
+name: CI
+
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on push or pull request events but only for the "main" branch
+  push:
+    branches: [ "dev", "elmarie/*" ]
+  pull_request:
+    branches: [ "main", "dev" ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  Build_Test:
+    runs-on: ubuntu-latest
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v3
+
+      # Set up Python 3.11.9
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.11.9
+
+      # Set up a virtual environment and activate it
+      - name: Create virtual environment
+        run: |
+          python -m venv venv
+          source venv/bin/activate
+
+      # Install Python libraries
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # Check linting and formatting
+      - name: Check linting and formatting
+        run: |
+          ruff check . --diff
+          ruff format . --diff
+
+      # Run tests and make coverage report
+      - name: Run tests
+        run: |
+          source run_tests.sh

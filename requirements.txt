@@ -11,3 +11,4 @@ ruff==0.5.6
 # Application
 fastapi==0.111.1
 pandas==2.2.2
+sqlmodel==0.0.22
