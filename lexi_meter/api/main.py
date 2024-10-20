@@ -4,23 +4,23 @@ import uvicorn
 from fastapi import (
     FastAPI,
     HTTPException,
+    Response,
     WebSocket,
     WebSocketDisconnect,
     status,
-    Response,
 )
 from sqlmodel import Session, select
 
 from lexi_meter.back_end.models import (
+    Participant,
     Quiz,
+    QuizAnswer,
     QuizCreateBody,
     QuizOption,
     QuizQuestion,
+    SubmitAnswersBody,
     create_db_and_tables,
     engine,
-    QuizAnswer,
-    SubmitAnswersBody,
-    Participant,
 )
 
 app = FastAPI()
@@ -61,27 +61,16 @@ def on_startup():
 @app.post("/create-quiz/", status_code=status.HTTP_201_CREATED)
 async def create_quiz(data: QuizCreateBody):
     """Creates a new quiz with multiple questions and options."""
-    if not data.questions:
-        raise HTTPException(
-            status_code=400, detail="A quiz must have at least one question."
-        )
-
     with Session(engine) as session:
         questions = [
             QuizQuestion(
-                question_text=question.question_text,
-                options=[
-                    QuizOption(option_text=opt.option_text) for opt in question.options
-                ],
+                question_text=question["question_text"],
+                options=[QuizOption(option_text=option_text) for option_text in question["options"]],
             )
             for question in data.questions
         ]
 
-        quiz = Quiz(
-            title=data.title,
-            user_id=data.user_id,
-            questions=questions,
-        )
+        quiz = Quiz(title=data.title, user_id=data.user_id, questions=questions)
 
         session.add(quiz)
         session.commit()
@@ -101,49 +90,35 @@ async def get_available_quiz():
 
 
 @app.get("/get-quiz/{quiz_id}", status_code=status.HTTP_200_OK)
-async def get_quiz(quiz_id):
-    """Retrieves specific quiz information"""
+async def get_quiz(quiz_id: str):
+    """Retrieve detailed information for a specific quiz."""
     with Session(engine) as session:
-        # Retrieve the quiz along with its questions
         quiz = session.get(Quiz, quiz_id)
         if not quiz:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="Quiz not found"
-            )
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Quiz not found")
 
         quiz_details = {"id": quiz.id, "title": quiz.title, "questions": []}
 
         for question in quiz.questions:
-            question_info = {
-                "id": question.id,
-                "text": question.question_text,
-                "options": [],
-            }
+            question_info = {"id": question.id, "text": question.question_text, "options": []}
 
             for option in question.options:
                 vote_count = session.exec(
                     select(QuizAnswer).where(QuizAnswer.option_id == option.id)
                 ).count()
 
-                option_info = {
-                    "id": option.id,
-                    "text": option.option_text,
-                    "vote_count": vote_count,
-                    "participants": [],
-                }
+                option_info = {"id": option.id, "text": option.option_text, "vote_count": vote_count}
 
-                answers = session.exec(
-                    select(QuizAnswer).where(QuizAnswer.option_id == option.id)
-                ).all()
+                answers = session.exec(select(QuizAnswer).where(QuizAnswer.option_id == option.id)).all()
 
-                for answer in answers:
-                    participant = session.get(Participant, answer.participant_id)
-                    option_info["participants"].append(
-                        {
-                            "participant_id": participant.id,
-                            "name": participant.name,
-                        }
-                    )
+                participants = [
+                    {
+                        "id": answer.participant_id,
+                        "name": session.get(Participant, answer.participant_id).name,
+                    }
+                    for answer in answers
+                ]
+                option_info["participants"] = participants
 
                 question_info["options"].append(option_info)
 
@@ -153,16 +128,16 @@ async def get_quiz(quiz_id):
 
 
 @app.delete("/delete-quiz/{quiz_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_quiz(quiz_id: str = None):
-    """Deletes quiz"""
+async def delete_quiz(quiz_id: str):
+    """Deletes a quiz by ID."""
     with Session(engine) as session:
-        statement = select(Quiz).where(Quiz.id == quiz_id)
-        result = session.exec(statement)
-        if not result:
-            return Response(status_code=404)
-        session.delete(result)
+        quiz = session.get(Quiz, quiz_id)
+        if not quiz:
+            raise HTTPException(status_code=404, detail="Quiz not found")
+
+        session.delete(quiz)
         session.commit()
-        return True
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @app.post("/submit-answers/", status_code=status.HTTP_201_CREATED)
@@ -174,10 +149,10 @@ async def submit_answers(data: SubmitAnswersBody):
         ).first()
 
         if not participant:
-            participant = Participant(
-                name=data.participant.name,
-            )
+            participant = Participant(name=data.participant.name)
             session.add(participant)
+            session.commit()
+            session.refresh(participant)
 
         for answer in data.answers:
             option = session.exec(
@@ -200,7 +175,6 @@ async def submit_answers(data: SubmitAnswersBody):
             session.add(quiz_answer)
 
         session.commit()
-
         return {"message": "Answers submitted successfully"}
 
 
