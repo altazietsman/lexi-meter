@@ -22,13 +22,41 @@ def get_default_uuid():
     return str(uuid())
 
 
-# TODO will see if this works. Maybe w should have a csv?
-# Curently only creates one question
-class QuizCreateBody(SQLModel):
-    """Defines quize creation body"""
+class OptionCreate(SQLModel):
+    """Defines the structure of an option."""
 
-    quiz: str = Field(default=None, min_length=1, max_length=255)
-    options: list[str] = Field(default=None, min_length=1, max_length=255, min_items=2, max_items=5)
+    option_text: str = Field(nullable=False)
+
+
+class QuestionCreate(SQLModel):
+    """Defines the structure of a question."""
+
+    question_text: str = Field(nullable=False, min_length=1, max_length=255)
+    options: list[OptionCreate] = Field(min_items=2, max_items=5)
+
+
+class QuizCreateBody(SQLModel):
+    """Defines the structure of a quiz creation request."""
+
+    title: str = Field(default=None, min_length=1, max_length=255)
+    user_id: str = Field(nullable=False)
+    questions: list[QuestionCreate] = Field(min_items=1)
+
+    class Config:
+        schema_extra = {
+            "title": "Technology Survey",
+            "user_id": "user_456",
+            "questions": [
+                {
+                    "question_text": "What is your favorite database?",
+                    "options": ["PostgreSQL", "MySQL", "SQLite"],
+                },
+                {
+                    "question_text": "What IDE do you use?",
+                    "options": ["VSCode", "PyCharm", "Sublime"],
+                },
+            ],
+        }
 
 
 class Quiz(SQLModel, table=True):
