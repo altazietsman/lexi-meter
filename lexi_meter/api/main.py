@@ -100,14 +100,22 @@ async def get_quiz(quiz_id: str):
         quiz_details = {"id": quiz.id, "title": quiz.title, "questions": []}
 
         for question in quiz.questions:
-            question_info = {"id": question.id, "text": question.question_text, "options": []}
+            question_info = {
+                "id": question.id,
+                "text": question.question_text,
+                "options": [],
+            }
 
             for option in question.options:
                 vote_count = session.exec(
                     select(QuizAnswer).where(QuizAnswer.option_id == option.id)
                 ).count()
 
-                option_info = {"id": option.id, "text": option.option_text, "vote_count": vote_count}
+                option_info = {
+                    "id": option.id,
+                    "text": option.option_text,
+                    "vote_count": vote_count,
+                }
 
                 answers = session.exec(select(QuizAnswer).where(QuizAnswer.option_id == option.id)).all()
 
@@ -164,7 +172,8 @@ async def submit_answers(data: SubmitAnswersBody):
             if not option:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"Invalid option_id '{answer.option_id}' for question_id '{answer.question_id}'.",
+                    detail=f"""Invalid option_id '{answer.option_id}' for 
+                                question_id '{answer.question_id}'.""",
                 )
 
             quiz_answer = QuizAnswer(
