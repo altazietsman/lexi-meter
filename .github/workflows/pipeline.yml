@@ -5,9 +5,9 @@ name: CI
 on:
   # Triggers the workflow on push or pull request events but only for the "main" branch
   push:
-    branches: [ "main" ]
+    branches: [ "dev", "elmarie/*" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "dev" ]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -20,11 +20,11 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v3
 
-      # Set up Python 3.11.7
+      # Set up Python 3.11.9
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
-          python-version: 3.11.7
+          python-version: 3.11.9
 
       # Set up a virtual environment and activate it
       - name: Create virtual environment
@@ -41,11 +41,10 @@ jobs:
       # Check linting and formatting
       - name: Check linting and formatting
         run: |
-          black ./ --check
-          pylint src/*.py src/tests/*.py
+          ruff check . --diff
+          ruff format . --diff
 
       # Run tests and make coverage report
-      # TODO: Test paths not resolving properly (need to investigate)
       - name: Run tests
         run: |
-          pytest --cov-report term-missing --cov=. --cov-fail-under=0 ./
+          source run_tests.sh
