@@ -2,7 +2,7 @@
 
 import uvicorn
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, status
-from sqlmodel import Session
+from sqlmodel import Session, select
 
 from lexi_meter.back_end.models import (
     Quiz,
@@ -52,17 +52,13 @@ def on_startup():
 async def create_quiz(data: QuizCreateBody):
     """Creates a new quiz with multiple questions and options."""
     if not data.questions:
-        raise HTTPException(
-            status_code=400, detail="A quiz must have at least one question."
-        )
+        raise HTTPException(status_code=400, detail="A quiz must have at least one question.")
 
     with Session(engine) as session:
         questions = [
             QuizQuestion(
                 question_text=question.question_text,
-                options=[
-                    QuizOption(option_text=opt.option_text) for opt in question.options
-                ],
+                options=[QuizOption(option_text=opt.option_text) for opt in question.options],
             )
             for question in data.questions
         ]
@@ -83,7 +79,11 @@ async def create_quiz(data: QuizCreateBody):
 @app.get("/get-available-quiz/", status_code=status.HTTP_200_OK)
 async def get_available_quiz():
     """Retrieve list of available quizzes"""
-    pass
+    with Session(engine) as session:
+        statement = select(Quiz)
+        result = session.exec(statement)
+        quizzes = result.all()
+        return [{"id": quiz.id, "title": quiz.title} for quiz in quizzes]
 
 
 @app.get("/get-quiz/{quiz_id}", status_code=status.HTTP_200_OK)
