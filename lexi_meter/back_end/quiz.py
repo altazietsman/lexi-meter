@@ -33,9 +33,7 @@ class Quiz:
             "correct_option",
         ]
         if not set(expected_columns).issubset(self.quiz_df.columns):
-            raise ValueError(
-                f"Columns of the quiz data frame should be {expected_columns}"
-            )
+            raise ValueError(f"Columns of the quiz data frame should be {expected_columns}")
 
     def check_answers(self, participant_answers):
         """
@@ -51,9 +49,7 @@ class Quiz:
             correct_row = self.quiz_df[self.quiz_df["question_nr"] == question_nr]
 
             if correct_row.empty:
-                raise ValueError(
-                    f"No matching question found for question_nr {question_nr}"
-                )
+                raise ValueError(f"No matching question found for question_nr {question_nr}")
 
             correct_option = correct_row["correct_option"].values[0]
 
