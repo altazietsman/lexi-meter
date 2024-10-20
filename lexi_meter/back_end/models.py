@@ -59,6 +59,37 @@ class QuizCreateBody(SQLModel):
         }
 
 
+class AnswerCreate(SQLModel):
+    """Schema for individual answer submission."""
+
+    question_id: str = Field(nullable=False)
+    option_id: str = Field(nullable=False)
+
+
+class ParticipantCreate(SQLModel):
+    """Schema for participant information."""
+
+    name: str = Field(nullable=False)
+
+
+class SubmitAnswersBody(SQLModel):
+    """Request body for submitting multiple answers."""
+
+    participant: ParticipantCreate
+    answers: list[AnswerCreate] = Field(min_items=1)
+
+    class Config:
+        schema_extra = {
+            "participant": {
+                "name": "John Doe",
+            },
+            "answers": [
+                {"question_id": "question_123", "option_id": "option_456"},
+                {"question_id": "question_789", "option_id": "option_101"},
+            ],
+        }
+
+
 class Quiz(SQLModel, table=True):
     "Stores quiz name and metadata"
 
@@ -101,7 +132,6 @@ class Participant(SQLModel, table=True):
 
     id: str | None = Field(default_factory=get_default_uuid, primary_key=True)
     name: str = Field(nullable=False)
-    email: str | None = Field(default=None)
     answers: list["QuizAnswer"] = Relationship(
         back_populates="participant",
         sa_relationship_kwargs={"cascade": "all,delete-orphan"},
